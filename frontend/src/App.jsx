@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Navbar from "./components/Navbar";
+import AppLayout from "./components/layout/AppLayout";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -11,76 +11,45 @@ import CustomerDetail from "./pages/CustomerDetail";
 import CustomerForm from "./pages/CustomerForm";
 import Opportunities from "./pages/Opportunities";
 
-function AppLayout({ children }) {
-  const { token, loading } = useAuth();
-
+function AuthGate({ children }) {
+  const { loading } = useAuth();
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {token && <Navbar />}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
-    </div>
-  );
+  return children;
 }
 
 export default function App() {
   return (
-    <>
-      <AppLayout>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/customers"
-            element={
-              <ProtectedRoute>
-                <CustomerList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/customers/new"
-            element={
-              <ProtectedRoute>
-                <CustomerForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/customers/:id"
-            element={
-              <ProtectedRoute>
-                <CustomerDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/opportunities"
-            element={
-              <ProtectedRoute>
-                <Opportunities />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AppLayout>
+    <AuthGate>
+      <Routes>
+        {/* Public */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Protected — wrapped in AppLayout (sidebar + content) */}
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Routes>
+                  <Route index element={<Dashboard />} />
+                  <Route path="customers"     element={<CustomerList />} />
+                  <Route path="customers/new" element={<CustomerForm />} />
+                  <Route path="customers/:id" element={<CustomerDetail />} />
+                  <Route path="opportunities" element={<Opportunities />} />
+                  <Route path="*"             element={<Navigate to="/" replace />} />
+                </Routes>
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+
       <Toaster
         position="top-right"
         toastOptions={{
@@ -88,6 +57,6 @@ export default function App() {
           success: { iconTheme: { primary: "#4F46E5", secondary: "#fff" } },
         }}
       />
-    </>
+    </AuthGate>
   );
 }

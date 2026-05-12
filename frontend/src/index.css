@@ -2,38 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    @apply bg-gray-50 text-gray-900 antialiased;
-  }
-}
+@import "./styles/design-tokens.css";
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm
-           font-semibold rounded-lg hover:bg-indigo-700 transition-colors
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm
+           font-semibold rounded-lg hover:bg-primary-700 transition-colors
            disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 text-sm
-           font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-white text-neutral-700 text-sm
+           font-medium border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors
            disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
   .btn-danger {
-    @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600
+    @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-danger
            border border-red-200 rounded-lg hover:bg-red-50 transition-colors;
   }
 
   .input {
-    @apply w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900
-           placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500
-           focus:border-transparent transition;
+    @apply w-full px-3.5 py-2.5 border border-neutral-300 rounded-lg text-sm
+           text-neutral-900 placeholder-neutral-400
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           transition-colors;
   }
 
   .card {
-    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+    @apply bg-white rounded-xl border border-neutral-200 shadow-sm;
   }
 
   .badge {
