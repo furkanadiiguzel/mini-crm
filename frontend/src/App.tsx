@@ -11,7 +11,7 @@ import CustomerList from "./pages/CustomerList";
 import CustomerDetail from "./pages/CustomerDetail";
 import CustomerForm from "./pages/CustomerForm";
 import Opportunities from "./pages/Opportunities";
-import Kanban from "./pages/Kanban";
+import KanbanBoard from "./pages/KanbanBoard";
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth();
@@ -42,7 +42,7 @@ export default function App() {
                     <Route path="customers/new" element={<CustomerForm />} />
                     <Route path="customers/:id" element={<CustomerDetail />} />
                     <Route path="opportunities" element={<Opportunities />} />
-                    <Route path="kanban"        element={<Kanban />} />
+                    <Route path="kanban"        element={<KanbanBoard />} />
                     <Route path="*"             element={<Navigate to="/" replace />} />
                   </Routes>
                 </PageTransition>
