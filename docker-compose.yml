@@ -1,16 +1,14 @@
-version: "3.9"
-
 services:
   db:
     image: mysql:8.0
     restart: always
     environment:
-      MYSQL_DATABASE: ${DB_NAME:-minicrm}
-      MYSQL_USER: ${DB_USER:-crm_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-crm_pass}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: mini_crm
+      MYSQL_USER: crm_user
+      MYSQL_PASSWORD: crm_password
+      MYSQL_ROOT_PASSWORD: root_password
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -22,29 +20,30 @@ services:
   backend:
     build: ./backend
     restart: always
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py seed_data &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
     env_file:
       - ./backend/.env
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/app
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
 
   frontend:
     build: ./frontend
     restart: always
-    ports:
-      - "5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    environment:
-      - VITE_API_BASE_URL=http://localhost:8000/api
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
 
 volumes:
   mysql_data:
