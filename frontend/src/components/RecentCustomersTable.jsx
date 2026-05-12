@@ -1,13 +1,49 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Avatar from "./ui/Avatar";
 
-function formatDate(iso) {
-  return new Intl.DateTimeFormat("tr-TR", {
-    day: "2-digit", month: "short", year: "numeric",
-  }).format(new Date(iso));
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function relativeTime(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return "az önce";
+  if (mins < 60) return `${mins} dakika önce`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} saat önce`;
+  const days = Math.floor(hours / 24);
+  if (days < 30)  return `${days} gün önce`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} ay önce`;
+  return `${Math.floor(months / 12)} yıl önce`;
 }
 
-export default function RecentCustomersTable({ customers = [] }) {
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+
+function SkeletonRow() {
+  return (
+    <div className="flex items-center gap-3 px-5 py-3 animate-pulse">
+      <div className="w-9 h-9 rounded-full bg-gray-200 shrink-0" />
+      <div className="flex-1 space-y-1.5">
+        <div className="h-3.5 bg-gray-200 rounded w-1/3" />
+        <div className="h-3 bg-gray-200 rounded w-1/2" />
+      </div>
+      <div className="h-3 bg-gray-200 rounded w-14 shrink-0" />
+    </div>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
+export default function RecentCustomersTable({ customers = [], loading = false }) {
   const navigate = useNavigate();
+
+  if (loading) {
+    return (
+      <div className="divide-y divide-gray-50">
+        {[...Array(5)].map((_, i) => <SkeletonRow key={i} />)}
+      </div>
+    );
+  }
 
   if (customers.length === 0) {
     return (
@@ -18,47 +54,44 @@ export default function RecentCustomersTable({ customers = [] }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-100">
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              Ad Soyad
-            </th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              E-posta
-            </th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">
-              Şirket
-            </th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">
-              Eklenme Tarihi
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {customers.map((c) => (
-            <tr
-              key={c.id}
-              onClick={() => navigate(`/customers/${c.id}`)}
-              className="hover:bg-gray-50 cursor-pointer transition-colors"
-            >
-              <td className="px-4 py-3 font-medium text-gray-900">
-                {c.first_name} {c.last_name}
-              </td>
-              <td className="px-4 py-3 text-gray-600 truncate max-w-[180px]">
-                {c.email}
-              </td>
-              <td className="px-4 py-3 text-gray-600 hidden sm:table-cell">
-                {c.company || <span className="text-gray-300">—</span>}
-              </td>
-              <td className="px-4 py-3 text-gray-400 hidden md:table-cell">
-                {formatDate(c.created_at)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="divide-y divide-gray-50">
+      {customers.map((c, index) => {
+        const fullName = `${c.first_name} ${c.last_name}`;
+        return (
+          <div
+            key={c.id}
+            onClick={() => navigate(`/customers/${c.id}`)}
+            className="flex items-center gap-3 px-5 py-3 hover:bg-neutral-50 cursor-pointer transition-colors group animate-fade-in"
+            style={{ animationDelay: `${index * 60}ms` }}
+          >
+            {/* Avatar */}
+            <Avatar name={fullName} size="sm" />
+
+            {/* Name + email */}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-neutral-900 truncate group-hover:text-indigo-700 transition-colors">
+                {fullName}
+              </p>
+              <p className="text-xs text-neutral-400 truncate">{c.email}</p>
+            </div>
+
+            {/* Relative time */}
+            <span className="text-xs text-neutral-400 shrink-0 tabular-nums">
+              {relativeTime(c.created_at)}
+            </span>
+          </div>
+        );
+      })}
+
+      {/* Footer link */}
+      <div className="px-5 py-3">
+        <Link
+          to="/customers"
+          className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+        >
+          Tüm müşterileri gör →
+        </Link>
+      </div>
     </div>
   );
 }

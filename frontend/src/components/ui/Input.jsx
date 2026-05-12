@@ -30,7 +30,7 @@ export default function Input({
           "placeholder-neutral-400 transition-colors duration-150",
           "focus:outline-none focus:ring-2 focus:ring-offset-0",
           error
-            ? "border-red-500 focus:ring-red-500 bg-red-50"
+            ? "border-red-500 focus:ring-red-500 bg-red-50 animate-shake"
             : "border-neutral-300 focus:ring-indigo-500 focus:border-indigo-500",
           disabled ? "bg-neutral-100 cursor-not-allowed text-neutral-400" : "bg-white",
           className,

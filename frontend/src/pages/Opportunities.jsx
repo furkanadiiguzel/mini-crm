@@ -1,17 +1,17 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, TrendingUp } from "lucide-react";
+import { RefreshCw, TrendingUp, ChevronDown } from "lucide-react";
 import api from "../services/api";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const FILTERS = [
-  { value: "",          label: "Tümü"      },
-  { value: "NEW",       label: "Yeni"      },
-  { value: "QUALIFIED", label: "Nitelikli" },
-  { value: "PROPOSAL",  label: "Teklif"    },
-  { value: "WON",       label: "Kazanılan" },
-  { value: "LOST",      label: "Kaybedilen"},
+  { value: "",          label: "Tümü"       },
+  { value: "NEW",       label: "Yeni"       },
+  { value: "QUALIFIED", label: "Nitelikli"  },
+  { value: "PROPOSAL",  label: "Teklif"     },
+  { value: "WON",       label: "Kazanılan"  },
+  { value: "LOST",      label: "Kaybedilen" },
 ];
 
 const STAGE_META = {
@@ -47,18 +47,41 @@ function StageBadge({ stage }) {
   );
 }
 
-function StageFilters({ active, onChange }) {
+// Desktop: pill button group
+function DesktopFilters({ active, onChange }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="hidden sm:flex flex-wrap gap-2">
       {FILTERS.map(({ value, label }) => (
         <button
           key={value}
           onClick={() => onChange(value)}
           className={[
-            "px-4 py-1.5 rounded-full text-sm font-medium transition-colors border",
+            "px-4 py-2 min-h-[40px] rounded-full text-sm font-medium transition-colors border",
             active === value
               ? "bg-indigo-600 text-white border-indigo-600"
               : "bg-white text-gray-600 border-gray-300 hover:border-indigo-400 hover:text-indigo-600",
+          ].join(" ")}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Mobile: horizontal scroll chips
+function MobileFilters({ active, onChange }) {
+  return (
+    <div className="sm:hidden -mx-4 px-4 flex gap-2 overflow-x-auto snap-x pb-1">
+      {FILTERS.map(({ value, label }) => (
+        <button
+          key={value}
+          onClick={() => onChange(value)}
+          className={[
+            "snap-start shrink-0 px-4 py-2 min-h-[44px] rounded-full text-sm font-medium border transition-colors",
+            active === value
+              ? "bg-indigo-600 text-white border-indigo-600"
+              : "bg-white text-gray-600 border-gray-300",
           ].join(" ")}
         >
           {label}
@@ -104,7 +127,7 @@ function CardSkeleton() {
 
 function DesktopTable({ opportunities, loading, navigate }) {
   return (
-    <div className="hidden md:block overflow-x-auto">
+    <div className="hidden sm:block overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200 bg-gray-50">
@@ -119,8 +142,12 @@ function DesktopTable({ opportunities, loading, navigate }) {
           <TableSkeleton />
         ) : (
           <tbody className="divide-y divide-gray-100">
-            {opportunities.map((opp) => (
-              <tr key={opp.id} className="hover:bg-gray-50 transition-colors">
+            {opportunities.map((opp, index) => (
+              <tr
+                key={opp.id}
+                className="hover:bg-gray-50 transition-colors animate-fade-in"
+                style={{ animationDelay: `${index * 40}ms` }}
+              >
                 <td className="px-4 py-3.5 font-medium text-gray-900">{opp.title}</td>
                 <td className="px-4 py-3.5">
                   <button
@@ -151,12 +178,16 @@ function DesktopTable({ opportunities, loading, navigate }) {
 // ── Mobile cards ──────────────────────────────────────────────────────────────
 
 function MobileCards({ opportunities, loading, navigate }) {
-  if (loading) return <div className="md:hidden"><CardSkeleton /></div>;
+  if (loading) return <div className="sm:hidden"><CardSkeleton /></div>;
 
   return (
-    <div className="md:hidden space-y-3">
-      {opportunities.map((opp) => (
-        <div key={opp.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+    <div className="sm:hidden space-y-3">
+      {opportunities.map((opp, index) => (
+        <div
+          key={opp.id}
+          className="bg-white rounded-xl border border-gray-200 p-4 space-y-3 animate-fade-in"
+          style={{ animationDelay: `${index * 40}ms` }}
+        >
           <div className="flex items-start justify-between gap-2">
             <p className="font-semibold text-gray-900 leading-snug">{opp.title}</p>
             <StageBadge stage={opp.stage} />
@@ -164,7 +195,7 @@ function MobileCards({ opportunities, loading, navigate }) {
           <div className="flex items-center justify-between text-sm">
             <button
               onClick={() => navigate(`/customers/${opp.customer}`)}
-              className="text-indigo-600 hover:underline font-medium"
+              className="text-indigo-600 hover:underline font-medium min-h-[44px] flex items-center"
             >
               {opp.customer_name}
             </button>
@@ -196,7 +227,6 @@ export default function Opportunities() {
     try {
       const params = activeStage ? { stage: activeStage } : {};
       const { data } = await api.get("/opportunities/", { params });
-      // DRF paginated veya düz liste olabilir
       setOpportunities(Array.isArray(data) ? data : data.results ?? []);
     } catch (err) {
       setError(err.message || "Fırsatlar yüklenemedi.");
@@ -207,20 +237,17 @@ export default function Opportunities() {
 
   useEffect(() => { fetchOpportunities(); }, [fetchOpportunities]);
 
-  const handleFilterChange = (value) => {
-    setActiveStage(value);
-  };
-
   const isEmpty = !loading && !error && opportunities.length === 0;
   const activeLabel = FILTERS.find((f) => f.value === activeStage)?.label ?? "Tümü";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <h1 className="text-2xl font-bold text-gray-900">Fırsatlar</h1>
 
       {/* Stage filters */}
-      <StageFilters active={activeStage} onChange={handleFilterChange} />
+      <DesktopFilters active={activeStage} onChange={setActiveStage} />
+      <MobileFilters  active={activeStage} onChange={setActiveStage} />
 
       {/* Error */}
       {error && (
@@ -242,7 +269,6 @@ export default function Opportunities() {
           <DesktopTable opportunities={opportunities} loading={loading} navigate={navigate} />
           <MobileCards  opportunities={opportunities} loading={loading} navigate={navigate} />
 
-          {/* Empty state */}
           {isEmpty && (
             <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
               <TrendingUp size={36} strokeWidth={1.5} />

@@ -4,12 +4,14 @@ import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
 
+import PageTransition from "./components/PageTransition";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import CustomerList from "./pages/CustomerList";
 import CustomerDetail from "./pages/CustomerDetail";
 import CustomerForm from "./pages/CustomerForm";
 import Opportunities from "./pages/Opportunities";
+import Kanban from "./pages/Kanban";
 
 function AuthGate({ children }) {
   const { loading } = useAuth();
@@ -36,14 +38,17 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AppLayout>
+                <PageTransition>
                 <Routes>
                   <Route index element={<Dashboard />} />
                   <Route path="customers"     element={<CustomerList />} />
                   <Route path="customers/new" element={<CustomerForm />} />
                   <Route path="customers/:id" element={<CustomerDetail />} />
                   <Route path="opportunities" element={<Opportunities />} />
+                  <Route path="kanban"        element={<Kanban />} />
                   <Route path="*"             element={<Navigate to="/" replace />} />
                 </Routes>
+                </PageTransition>
               </AppLayout>
             </ProtectedRoute>
           }

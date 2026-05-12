@@ -38,7 +38,7 @@ export default function Button({
         "focus:outline-none focus:ring-2 focus:ring-offset-2",
         VARIANTS[variant] ?? VARIANTS.primary,
         SIZES[size] ?? SIZES.md,
-        isDisabled ? "opacity-50 cursor-not-allowed" : "",
+        isDisabled ? "opacity-50 cursor-not-allowed" : "active:scale-[0.97]",
         className,
       ]
         .filter(Boolean)
