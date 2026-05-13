@@ -439,6 +439,3 @@ docker-compose logs db   # MySQL loglarını kontrol et
 
 ---
 
-## Ekran Görüntüleri
-
-(ekran görüntüleri ekle: Login, Dashboard, Müşteri Listesi, Müşteri Detay, Fırsatlar, Kanban Board)
