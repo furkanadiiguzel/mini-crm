@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from decimal import Decimal
 
@@ -19,6 +20,8 @@ from .serializers import (
     NoteSerializer,
     OpportunitySerializer,
 )
+
+logger = logging.getLogger("customers")
 
 
 class CustomerPagination(PageNumberPagination):
@@ -57,7 +60,12 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        logger.info("Customer created: %s (id=%s)", instance.email, instance.pk)
+
     def perform_destroy(self, instance):
+        logger.warning("Customer soft deleted: id=%s email=%s", instance.pk, instance.email)
         instance.soft_delete()
 
 
@@ -84,6 +92,16 @@ class OpportunityViewSet(viewsets.ModelViewSet):
         if stage:
             queryset = queryset.filter(stage=stage)
         return queryset
+
+    def perform_update(self, serializer):
+        old_stage = serializer.instance.stage
+        instance  = serializer.save()
+        new_stage = instance.stage
+        if old_stage != new_stage:
+            logger.info(
+                "Opportunity %s stage changed: %s → %s (customer=%s)",
+                instance.pk, old_stage, new_stage, instance.customer_id,
+            )
 
 
 class CurrentUserView(APIView):
@@ -119,13 +137,19 @@ class RegisterView(APIView):
                 {"email": "Bu e-posta adresi zaten kayıtlı."}
             )
 
-        user = User.objects.create_user(
-            username=data["username"],
-            email=data["email"],
-            password=data["password"],
-            first_name=data.get("first_name", ""),
-            last_name=data.get("last_name", ""),
-        )
+        try:
+            user = User.objects.create_user(
+                username=data["username"],
+                email=data["email"],
+                password=data["password"],
+                first_name=data.get("first_name", ""),
+                last_name=data.get("last_name", ""),
+            )
+        except Exception as e:
+            logger.error("Failed to create user '%s': %s", data.get("username"), str(e), exc_info=True)
+            raise
+
+        logger.info("New user registered: %s", user.username)
 
         from rest_framework_simplejwt.tokens import RefreshToken
         refresh = RefreshToken.for_user(user)
@@ -144,6 +168,7 @@ class RegisterView(APIView):
 
 class DashboardView(APIView):
     def get(self, request):
+        logger.debug("Dashboard summary requested by user=%s", request.user.username)
         now = timezone.now()
         thirty_days_ago = now - timedelta(days=30)
 
@@ -177,4 +202,8 @@ class DashboardView(APIView):
             "won_revenue_this_month": str(won_revenue),
             "recent_customers": CustomerListSerializer(recent_customers, many=True).data,
         }
+        logger.debug(
+            "Dashboard summary returned: customers=%s opportunities_stages=%s",
+            total_customers, len(opportunities_by_stage),
+        )
         return Response(data)

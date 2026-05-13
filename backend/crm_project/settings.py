@@ -6,11 +6,14 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ── Core ──────────────────────────────────────────────────────────────────────
+# SECRET_KEY has no default — startup fails fast if the env var is missing.
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
+# Strip whitespace so "host1, host2" (with spaces) works cleanly.
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -99,13 +102,87 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# CORS
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+# ── Logging ───────────────────────────────────────────────────────────────────
 
-# DRF
+LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} [{levelname}] {module}: {message}",
+            "style":  "{",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style":  "{",
+        },
+    },
+
+    "handlers": {
+        "console": {
+            "class":     "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+        "file": {
+            "class":       "logging.handlers.RotatingFileHandler",
+            "filename":    LOGS_DIR / "crm.log",
+            "maxBytes":    5 * 1024 * 1024,  # 5 MB
+            "backupCount": 3,
+            "formatter":   "verbose",
+            "encoding":    "utf-8",
+        },
+    },
+
+    "loggers": {
+        "customers": {
+            "handlers":  ["console", "file"],
+            "level":     "DEBUG",
+            "propagate": False,
+        },
+        "django": {
+            "handlers":  ["console", "file"],
+            "level":     "WARNING",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers":  ["console", "file"],
+            "level":     "ERROR",
+            "propagate": False,
+        },
+    },
+}
+
+# ── CORS ──────────────────────────────────────────────────────────────────────
+
+CORS_ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    if o.strip()
+]
+CORS_ALLOW_CREDENTIALS = True
+
+# ── Production security ────────────────────────────────────────────────────────
+# These are only meaningful when serving over HTTPS with DEBUG=False.
+# If SSL is terminated at a reverse proxy (nginx/Caddy), also set
+# SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") in production.
+if not DEBUG:
+    SESSION_COOKIE_SECURE          = True
+    CSRF_COOKIE_SECURE             = True
+    SECURE_BROWSER_XSS_FILTER      = True
+    SECURE_CONTENT_TYPE_NOSNIFF    = True
+    X_FRAME_OPTIONS                = "DENY"
+    SECURE_HSTS_SECONDS            = 31_536_000   # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD            = True
+    # Uncomment if Django handles SSL directly (not behind a TLS-terminating proxy):
+    # SECURE_SSL_REDIRECT = True
+
+# ── DRF ──────────────────────────────────────────────────────────────────────
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
