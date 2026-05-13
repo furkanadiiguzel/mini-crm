@@ -1,19 +1,20 @@
-from pathlib import Path
-from dotenv import load_dotenv
 import os
+import sys
+from datetime import timedelta
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ── Core ──────────────────────────────────────────────────────────────────────
-# SECRET_KEY has no default — startup fails fast if the env var is missing.
-SECRET_KEY = os.environ["SECRET_KEY"]
+SECRET_KEY = os.environ.get("SECRET_KEY", "fallback-only-for-dev")
 
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 
-# Strip whitespace so "host1, host2" (with spaces) works cleanly.
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h.strip()]
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "localhost").split(",") if h.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -61,8 +62,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "crm_project.wsgi.application"
 
-import sys
-
 if "test" in sys.argv:
     DATABASES = {
         "default": {
@@ -73,14 +72,15 @@ if "test" in sys.argv:
 else:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": os.environ["DB_NAME"],
-            "USER": os.environ["DB_USER"],
-            "PASSWORD": os.environ["DB_PASSWORD"],
-            "HOST": os.getenv("DB_HOST", "localhost"),
-            "PORT": os.getenv("DB_PORT", "3306"),
+            "ENGINE": os.environ.get("DB_ENGINE", "django.db.backends.mysql"),
+            "NAME": os.environ.get("DB_NAME", "mini_crm"),
+            "USER": os.environ.get("DB_USER", "crm_user"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", "crm_password"),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "3306"),
             "OPTIONS": {
                 "charset": "utf8mb4",
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
             },
         }
     }
@@ -199,11 +199,9 @@ REST_FRAMEWORK = {
     ],
 }
 
-from datetime import timedelta
-
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.environ.get("ACCESS_TOKEN_LIFETIME_MINUTES", 60))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.environ.get("REFRESH_TOKEN_LIFETIME_DAYS", 7))),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
